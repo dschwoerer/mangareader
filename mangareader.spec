@@ -21,7 +21,7 @@ BuildArch: noarch
 mangareader is a image viewer, well suited for reading mangas.
 
 %prep
-%setup -q -n %{name}-%{commit}
+%setup -q -n %{name}-%{version}
 
 %install
 mkdir -p ${RPM_BUILD_ROOT}/usr/bin/
