@@ -17,10 +17,11 @@ def sign(num):
         return -1
     else:
         return 0
-    
+
+def debug(*args, **kwargs):
+    #print(*args, **kwargs)
 class Application(tk.Frame):
     def __init__(self, master=None):
-        #tk.Frame.__init__(self,master)
         tk.PanedWindow.__init__(self,master)
         self.pack(fill=tk.BOTH,expand=1);
         self.createWidgets()
@@ -35,7 +36,6 @@ class Application(tk.Frame):
         self.image      = tk.Canvas(self,height=self.im.height()*10,
                                     width=self.im.width()*10)
         self.update()
-        #print(self.winfo_width())
         self.image.grid()
         self.bind_all("<Button-4>", self.__up)
         self.bind_all("<Button-5>", self.__down)
@@ -70,7 +70,7 @@ class Application(tk.Frame):
             self.mode=self.DEFAULT_MODE
         else:
             self.mode = mode
-        print(self.mode)
+        debug(self.mode)
         self.__update()
     def __over(self,event):
         self.__toggle_mode('overview')
@@ -113,7 +113,7 @@ class Application(tk.Frame):
         self.__zoom_image()
         self.__update()
     def __on_mousewheel(self,event):
-        print(event.delta)
+        debug(event.delta)
         self.__move((0,-1*(event.delta)))
     def __center_image(self,event=None):
         
@@ -130,14 +130,13 @@ class Application(tk.Frame):
                 self.zoom=max(fac)
             self.__zoom_image()
             pos=self.get_canvas_size()-self.get_scaled_image_size()
-            print("old: ",pos)
-            pos_=pos[:]
+            debug("old: ",pos)
             if pos[0] > 0:
                 pos[0]=pos[0]//2
             pos[1]//=2
             if pos[1]<0:
                 pos[1]=0
-            print(pos_," -> ",pos)
+            debug(" -> ",pos)
             self.pos=pos
         self.pos=myadd(off,self.pos);
         self.image.delete("all")
@@ -153,7 +152,7 @@ class Application(tk.Frame):
         img_size=self.get_image_size()
         new_size=(img_size*fac).astype('int')
         im__=im.resize((new_size))
-        print(new_size)
+        debug(new_size)
         self.im=itk.PhotoImage(im__)
     def __update(self):
         self.__move((0,0))
@@ -189,19 +188,12 @@ class Application(tk.Frame):
     def __findimage(self,off):
         self.pos=None
         self.zoom=1
-        #print(self.winfo_width())
         global url
         url=self.__findimage_helper(url,off)
-        # usl=us[-1].split('.')
-        # usl[0]=str(off+int(usl[0]))
-        # us[-1]=".".join(usl)
-        # newurl="/".join(us)
-        print(url)
         if os.path.isdir(url):
             print("%s is a directory"%url)
             self.__findimage(sign(off))
         else:
-            print("try it")
             global im
             try:
                 im=Image.open(url)
