@@ -1,0 +1,246 @@
+#!/usr/bin/python3
+
+#requires python3-pillow-tk
+#requires python3-natsort
+#requires python3-numpy
+
+import sys,os
+from PIL import Image
+from PIL import ImageTk as itk
+import tkinter as tk
+from natsort import natsorted
+import numpy as np
+def sign(num):
+    if num>0:
+        return 1
+    elif num <0:
+        return -1
+    else:
+        return 0
+    
+class Application(tk.Frame):
+    def __init__(self, master=None):
+        #tk.Frame.__init__(self,master)
+        tk.PanedWindow.__init__(self,master)
+        self.pack(fill=tk.BOTH,expand=1);
+        self.createWidgets()
+        self.pos=None
+        self.zoom=1
+        self.after(50,self.__update);
+        self.DEFAULT_MODE='manga'
+        self.mode=self.DEFAULT_MODE
+        
+    def createWidgets(self):
+        self.im=itk.PhotoImage(im)
+        self.image      = tk.Canvas(self,height=self.im.height()*10,
+                                    width=self.im.width()*10)
+        self.update()
+        #print(self.winfo_width())
+        self.image.grid()
+        self.bind_all("<Button-4>", self.__up)
+        self.bind_all("<Button-5>", self.__down)
+        self.bind_all('<Button-1>',self.__right)
+        self.bind_all('<Button-2>',self.__left)
+        self.bind_all('<Up>'    ,self.__up)
+        self.bind_all('<Down>'  ,self.__down)
+        self.bind_all('<Right>' ,self.__right_or_next)
+        self.bind_all('<Left>'  ,self.__left_or_last)
+        self.bind_all('<Return>',self.__enter)
+        self.bind_all('<Next>',self.__pgdwn)
+        self.bind_all('<KP_Next>',self.__pgdwn)
+        self.bind_all('<Prior>',self.__pgup)
+        self.bind_all('<KP_Prior>',self.__pgup)
+        self.bind_all('<Key-o>',self.__over)
+        self.bind_all('<Key-q>',self.__zoom_in)
+        self.bind_all('<Key-e>',self.__zoom_out)
+        self.bind_all('<Key-w>',self.__up)
+        self.bind_all('<Key-s>',self.__down)
+        self.bind_all('<Key-a>',self.__left)
+        self.bind_all('<Key-d>',self.__right)
+        self.bind_all('<Key-c>',self.__center_image)
+        self.bind_all('<Key-v>',self.__dia)
+        self.bind_all('<BackSpace>',self.__prev)
+
+    def __clicked(self,event):
+        self.__next();
+    def __toggle_mode(self,mode):
+        self.pos=None
+        self.zoom=1
+        if self.mode == mode:
+            self.mode=self.DEFAULT_MODE
+        else:
+            self.mode = mode
+        print(self.mode)
+        self.__update()
+    def __over(self,event):
+        self.__toggle_mode('overview')
+    def __dia(self,event):
+        self.__toggle_mode('dia')
+    def __pgdwn(self,event):
+        self.__findimage(100)
+    def __pgup(self,event):
+        self.__findimage(-100)
+    def __enter(self,event):
+        self.__next()
+    def __up(self,event):
+        self.__move( (0, self.winfo_height()/20))
+    def __down(self,event):
+        self.__move( (0,-self.winfo_height()/20))
+    def __right_or_next(self,event):
+        if self.im.width() < self.winfo_width()+2:
+            self.__next()
+        else:
+            self.__right()
+    def __right(self,event=None):
+        self.__move((-self.winfo_width()/20,0));
+    def __left_or_last(self,event):
+        if self.im.width() < self.winfo_width()+2:
+            self.__prev()
+        else:
+            self.__left()
+    def __left(self,event=None):
+        self.__move(( self.winfo_width()/20,0))
+    def __zoom_in(self,event):
+        self.__zoom(1.1)
+    def __zoom_out(self,event):
+        self.__zoom(1/1.1)
+    def __zoom(self,zf):
+        self.zoom*=zf
+        if zf>1:
+            if max(self.get_scaled_image_size()/self.get_canvas_size()) > 3:
+                print("Lazy algo - need to prevent overzoom :/")
+                self.zoom/=zf
+        self.__zoom_image()
+        self.__update()
+    def __on_mousewheel(self,event):
+        print(event.delta)
+        self.__move((0,-1*(event.delta)))
+    def __center_image(self,event=None):
+        
+        self.pos=(self.get_canvas_size()-self.get_scaled_image_size()) // 2
+        if event is not None:
+            self.__update()
+    def __move(self,off):
+        if self.pos is None:
+            if self.mode == 'overview':
+                fac=self.get_canvas_size()/self.get_image_size()
+                self.zoom=min(fac)
+            elif self.mode == 'dia':
+                fac=self.get_canvas_size()/self.get_image_size()
+                self.zoom=max(fac)
+            self.__zoom_image()
+            pos=self.get_canvas_size()-self.get_scaled_image_size()
+            print("old: ",pos)
+            pos_=pos[:]
+            if pos[0] > 0:
+                pos[0]=pos[0]//2
+            pos[1]//=2
+            if pos[1]<0:
+                pos[1]=0
+            print(pos_," -> ",pos)
+            self.pos=pos
+        self.pos=myadd(off,self.pos);
+        self.image.delete("all")
+        self.image.create_image(self.pos[0],self.pos[1],image=self.im,anchor=tk.NW)
+    def get_image_size(self):
+        return np.array([im.width,im.height])
+    def get_scaled_image_size(self):
+        return np.array([self.im.width(),self.im.height()])
+    def get_canvas_size(self):
+        return np.array([self.winfo_width(),self.winfo_height()])
+    def __zoom_image(self):
+        fac=self.zoom
+        img_size=self.get_image_size()
+        new_size=(img_size*fac).astype('int')
+        im__=im.resize((new_size))
+        print(new_size)
+        self.im=itk.PhotoImage(im__)
+    def __update(self):
+        self.__move((0,0))
+    def __next(self):
+        self.__findimage(1)
+    def __prev(self,event=None):
+        self.__findimage(-1)
+    def __findimage_helper(self,path,off,type="f"):
+        us=path.split('/')
+        usd="/".join(us[:-1])
+        if usd == "":
+            usd="."
+        flst=os.listdir(usd)
+        flst=natsorted(flst)
+        fi=0
+        for f in flst:
+            if f == us[-1]:
+                break
+            fi+=1
+        if fi+off >= len(flst) or fi+off<0:
+            flst=[]
+            nd="/".join(us[:-1])
+            while flst == []:
+                nd=self.__findimage_helper(nd,sign(off),"d")
+                flst=natsorted(os.listdir(nd))
+            if off>0:
+                flst=flst[0]
+            else:
+                flst=flst[-1]
+            return nd+"/"+flst
+        else:
+            return usd+"/"+flst[fi+off]
+    def __findimage(self,off):
+        self.pos=None
+        self.zoom=1
+        #print(self.winfo_width())
+        global url
+        url=self.__findimage_helper(url,off)
+        # usl=us[-1].split('.')
+        # usl[0]=str(off+int(usl[0]))
+        # us[-1]=".".join(usl)
+        # newurl="/".join(us)
+        print(url)
+        if os.path.isdir(url):
+            print("%s is a directory"%url)
+            self.__findimage(sign(off))
+        else:
+            print("try it")
+            global im
+            try:
+                im=Image.open(url)
+            except OSError:
+                raise
+                self.__findimage(sign(off))
+            self.im=itk.PhotoImage(im)
+            self.__update()
+            self.master.title("Imageviewer: "+url)
+    
+    def save_state(self):
+        global url
+        with open('.last.read', 'w') as file_:
+                file_.write(url)
+        
+        
+try:
+    url=sys.argv[1]
+except:
+    with open('.last.read', 'r') as file_:
+        url=file_.read()
+        
+try:
+    im=Image.open(url)
+except:
+    print("Usage:")
+    print("\t%s <path-to-image>"%sys.argv[0])
+    sys.exit(1)
+
+def myadd(l1,l2):
+    ret=[]
+    for i in range(len(l1)):
+        ret.append(l1[i]+l2[i])
+    return ret
+
+
+root = tk.Tk()
+app = Application()
+app.master.title('Imageviewer')
+import atexit
+atexit.register(app.save_state)
+app.mainloop()
