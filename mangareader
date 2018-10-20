@@ -35,8 +35,10 @@ class Application(tk.Frame):
         
     def createWidgets(self):
         self.im=itk.PhotoImage(im)
-        self.image      = tk.Canvas(self,height=self.im.height()*10,
-                                    width=self.im.width()*10)
+        x=min(self.im.height()*10,self.winfo_screenheight())
+        y=min(self.im.width()*10,self.winfo_screenwidth())
+        self.image      = tk.Canvas(self,height=x,
+                                    width=y)
         self.update()
         self.image.grid()
         self.bind_all("<Button-4>", self.__up)
