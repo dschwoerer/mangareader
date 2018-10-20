@@ -114,13 +114,18 @@ class Application(tk.Frame):
             if max(self.get_scaled_image_size()/self.get_canvas_size()) > 3:
                 print("Lazy algo - need to prevent overzoom :/")
                 self.zoom/=zf
+        else:
+            scrn=self.get_canvas_size()
+            img=self.get_scaled_image_size()
+            for dim in range(2):
+                if img[dim] < scrn[dim]:
+                    self.pos[dim]=(scrn[dim]-img[dim])//2
         self.__zoom_image()
         self.__update()
     def __on_mousewheel(self,event):
         debug(event.delta)
         self.__move((0,-1*(event.delta)))
     def __center_image(self,event=None):
-        
         self.pos=(self.get_canvas_size()-self.get_scaled_image_size()) // 2
         if event is not None:
             self.__update()
@@ -143,6 +148,19 @@ class Application(tk.Frame):
             debug(" -> ",pos)
             self.pos=pos
         self.pos=myadd(off,self.pos);
+        # make sure the image stays on screen
+        scrn=self.get_canvas_size()
+        img=self.get_scaled_image_size()
+        for dim in range(2):
+            if scrn[dim] > img[dim]:
+                minp=0
+                maxp=scrn[dim]-img[dim]
+            else:
+                minp=scrn[dim]-img[dim]
+                maxp=0
+            self.pos[dim]=max(minp,self.pos[dim])
+            self.pos[dim]=min(maxp,self.pos[dim])
+        # Redraw
         self.image.delete("all")
         self.image.create_image(self.pos[0],self.pos[1],image=self.im,anchor=tk.NW)
     def get_image_size(self):
