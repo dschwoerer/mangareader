@@ -1,10 +1,10 @@
 %global git 1
-%global commit 9e8aedcb3ac1974a97315580e1226a9dab2e5ae3
+%global commit a7968f5dcf028bc96d0dd3ca7aae5192938af7df
 %global shortcommit %(c=%{commit}; echo ${c:0:7})
 
 Name:           mangareader
-Version:        0.3.0
-Release:        20171219git%{shortcommit}%{?dist}
+Version:        0.3.1
+Release:        20180103git%{shortcommit}%{?dist}
 Summary:        Library for the BOUndary Turbulence simulation framework
 
 License:        GPLv3
@@ -32,5 +32,8 @@ install mangareader  ${RPM_BUILD_ROOT}/usr/bin/
 %license LICENSE
 
 %changelog
+* Wed Jan 03 2018 David Schwörer <schword2mail.dcu.ie> - 0.3.1-20180103gita7968f5
+- Update to version 0.3.1 - a7968f5
+
 * Wed Jan 03 2018 David Schwörer <schword2mail.dcu.ie> - git
 - Initial RPM release.
